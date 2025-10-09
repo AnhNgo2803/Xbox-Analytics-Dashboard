@@ -195,8 +195,38 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
         ax_gen_tab.set_ylabel('',fontsize=8, fontweight='bold') # y label
         # indicate labels on bar
         for container in ax_gen_tab.containers:
-            ax_gen_tab.bar_label(container, fmt='{:,.0f}', fontsize=8, padding=-35,color='white')
+            # container.datavalues chứa một mảng các giá trị (vd: [455839, 412763, ...])
+            # container.patches chứa một danh sách các đối tượng Rectangle (các thanh bar)
+        
+            # Kết hợp giá trị và đối tượng thanh bar tương ứng
+            for value, bar in zip(container.datavalues, container.patches):
+                y_pos = bar.get_y() + bar.get_height() / 2
+            
+                # Lấy giới hạn tối đa của trục x để tính toán vị trí một cách tương đối
+                _, xmax = ax_gen_tab.get_xlim()
 
+                # Nếu thanh bar ngắn hơn 20% chiều rộng biểu đồ, label ra ngoài
+                if value < (xmax * 0.20):
+                    ax_gen_tab.text(value + (xmax * 0.01), 
+                                    y_pos, 
+                                    f'{value:,.0f}', 
+                                    va='center', 
+                                    ha='left', 
+                                    color='black', 
+                                    fontsize=8)
+                else:
+                    # Ngược lại, label vào trong
+                    ax_gen_tab.text(value - (xmax * 0.015), 
+                                    y_pos, 
+                                    f'{value:,.0f}', 
+                                    va='center', 
+                                    ha='right', 
+                                    color='white', 
+                                    fontsize=8)
+    
+        # Mở rộng giới hạn của trục x để đảm bảo label bên ngoài không bị cắt
+        xmax = ax_gen_tab.get_xlim()[1]
+        ax_gen_tab.set_xlim(right=xmax * 1.15)
         return fig_gen_tab
 
     # ========================================================================
