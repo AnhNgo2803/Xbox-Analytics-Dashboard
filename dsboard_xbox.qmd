@@ -120,11 +120,11 @@ ui.input_select("selected_genre", "Select genre", choices=genre_list)
 #| label: set-up-for-value-box-data
 from shiny import reactive
 
-@reactive.calc
-def reactive_df():
-    """Hàm này sẽ lọc dataframe dựa trên genre được chọn và trả về 1 dataframe mới."""
-    react_df = xbox.loc[xbox['Main_Genre'] == input.selected_genre(),:]
-    return react_df
+#@reactive.calc
+#def reactive_df():
+    #"""Hàm này sẽ lọc dataframe dựa trên genre được chọn và trả về 1 dataframe mới."""
+    #react_df = xbox.loc[xbox['Main_Genre'] == input.selected_genre(),:]
+    #return react_df
 ```
 
 ## Row 1 - Area 1 - Value boxes {height="45%"}
@@ -137,7 +137,7 @@ def reactive_df():
 #| label: number-of-action-game
 @render.ui
 def num_game_by_genre():
-    data = reactive_df()
+    data = xbox.loc[xbox['Main_Genre'] == input.selected_genre(),:]
     if data.empty:
         game_name = "No games found"
         player_count = "N/A"
@@ -162,7 +162,7 @@ def num_game_by_genre():
 @render.ui
 def mean_player_genre():
 
-    data = reactive_df()
+    data = xbox.loc[xbox['Main_Genre'] == input.selected_genre(),:]
 
     if data.empty:
         game_name = "No games found"
@@ -299,7 +299,7 @@ def create_donut_chart():
 ```{python}
 @render.ui
 def rating_mean():
-    data = reactive_df()
+    data = xbox.loc[xbox['Main_Genre'] == input.selected_genre(),:]
 
     if data.empty:
         game_name = "No games found"
@@ -326,7 +326,7 @@ def rating_mean():
 @render.ui
 def game_most_played():
 
-    data = reactive_df()
+    data = xbox.loc[xbox['Main_Genre'] == input.selected_genre(),:]
 
     if data.empty:
         game_name = "No games found"
@@ -406,13 +406,8 @@ def genre_select():
 ```{python}
 @render.ui
 def total_game_count():
-    data= reactive_df() # just take its data but not use in this value box
 
-    if data.empty:
-        print("There is no data available right now")
-    else:
-        # find number of row (games) in this dataframe
-        total_game = len(xbox)
+    total_game = len(xbox)
     
     return ui.value_box(
         title="Games Analyzed",
@@ -431,13 +426,9 @@ def total_game_count():
 ```{python}
 @render.ui
 def total_players():
-    data= reactive_df() # just take its data but not use in this value box
 
-    if data.empty:
-        print("There is no data available right now")
-    else:
-        # find number of row (games) in this dataframe
-        total_player = xbox['GAMERS'].mean()
+    # find number of row (games) in this dataframe
+    total_player = xbox['GAMERS'].mean()
     # if 2nd times to process million number case
     if total_player >= 1000000:
         xbox_player = f"{int(total_player/1_000_000)}M"
@@ -566,15 +557,11 @@ def top_game_rank():
 ```{python}
 @render.ui
 def sandbox_count_avg():
-    data= reactive_df() # just take its data but not use in this value box
 
-    if data.empty:
-        print("There is no data available right now")
-    else:
-        # find number of row (games) in this dataframe
-        sandbox_gamers = rank_df.loc[rank_df['Main_Genre']=='Sandbox',"gamers"].iloc[0] # extract value out of df format
+    # find number of row (games) in this dataframe
+    sandbox_gamers = rank_df.loc[rank_df['Main_Genre']=='Sandbox',"gamers"].iloc[0] # extract value out of df format
 
-        avg_sandbox = f"{int(sandbox_gamers):,}"
+    avg_sandbox = f"{int(sandbox_gamers):,}"
     
     return ui.value_box(
         title="Sandbox",
@@ -593,12 +580,8 @@ def sandbox_count_avg():
 ```{python}
 @render.ui
 def chance_gap():
-    data= reactive_df() # just take its data but not use in this value box
 
-    if data.empty:
-        print("There is no data available right now")
-    else:
-        gap = "~16%"
+    gap = "~16%"
     
     return ui.value_box(
         title="Action - potential opportunity",
