@@ -1,0 +1,42 @@
+# ===============================================
+# CẤU HÌNH HỆ THỐNG MAC OS
+# ===============================================
+
+.DS_Store
+.localized
+.AppleDouble
+.Trashes
+# File cấu hình của các editor phổ biến trên Mac
+.vscode/
+.idea/
+
+# ===============================================
+# MÔI TRƯỜNG PYTHON
+# ===============================================
+
+# Thư mục/file môi trường ảo (Virtual Environment)
+venv/
+env/
+.venv/
+__pycache__/
+.ipynb_checkpoints
+
+# ===============================================
+# OUTPUT CỦA QUARTO & DỮ LIỆU
+# ===============================================
+
+# Thư mục output render (HTML/Dashboard)
+_site/
+docs/
+
+# File cache của Quarto/Jupyter
+.quarto/
+
+# Dữ liệu lớn (KHÔNG commit)
+data/
+*.csv
+*.xlsx
+
+# File log/cache tạm
+*.log
+*~

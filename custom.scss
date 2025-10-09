@@ -1,0 +1,106 @@
+/*-- scss:defaults --*/
+
+// Set split complementatry palette
+$valuebox-bg-primary: #BE2C2C;
+$valuebox-bg-secondary: #e5c14cff;
+$valuebox-bg-success: #1F7A43;
+$valuebox-bg-info: #2E7775;
+$valuebox-bg-warning: #DA8F56;
+
+// === Apply the colors to Shiny's actual value box classes ===
+.bslib-value-box.bg-primary    { background-color: $valuebox-bg-primary !important; }
+.bslib-value-box.bg-secondary  { background-color: $valuebox-bg-secondary !important; }
+.bslib-value-box.bg-success    { background-color: $valuebox-bg-success !important; }
+.bslib-value-box.bg-info       { background-color: $valuebox-bg-info !important; }
+.bslib-value-box.bg-warning    { background-color: $valuebox-bg-warning !important; }
+
+// Set default layout
+
+$navbar-bg: #1F7A43; // on-top navbar background color
+$navbar-fg: #dcdcdcff;
+$body-color: black;
+$body-bg: #ffffffff; // main background color
+
+.toolbar-content{
+    color: white;
+}
+
+/*-- scss:rules --*/
+
+// Adjust color for title and value in valueboxes
+.value-box-title{
+  color: white;
+}
+
+.value-box-value{
+  color: white;
+}
+
+.value-box-showcase{
+  color: white;
+} // adjust the color of icon in value boxes
+
+/* === Customize Xbox Logo size in navbar === */
+.navbar-logo {
+  width: 100px;     /* 💡 chỉnh chiều ngang */
+  height: auto;    /* giữ tỉ lệ gốc */
+  display: inline-block;
+  margin-right: 10px; /* tuỳ chỉnh spacing */
+  vertical-align: middle; /* căn giữa theo text nếu có */
+}
+
+.card-header{
+  font-weight: 500; // semi bold
+  font-size: 20px
+}
+
+.card{
+  border-radius: 12px;
+}
+
+/* === REMOVE WHITE SPACE AROUND VALUE BOX === */
+
+/* Xử lý grid bên trong để full màu */
+.value-box-grid {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* === Value box title spacing fix === */
+.value-box-title {
+  margin-top: -4px !important;  /* đẩy title lên một chút */
+  margin-bottom: 4px !important;
+  line-height: 1.2 !important;
+}
+
+/* === VALUE BOX BORDER FIX === */
+
+/* Viền ngoài card (màu trắng giữa các box) mỏng hơn */
+.bslib-card.bslib-value-box {
+  margin: -5px !important;            /* giảm margin ngoài */
+  border-radius: 20px !important;    /* bo góc nhẹ, mềm */
+  border: none !important;           /* bỏ border xám của bslib */
+}
+
+/* Nền màu chính full tới viền */
+.bslib-value-box.bg-primary,
+.bslib-value-box.bg-success,
+.bslib-value-box.bg-warning,
+.bslib-value-box.bg-danger {
+  padding: 0 !important;
+  background-clip: padding-box;      /* đảm bảo nền không bị viền trắng lọt vô */
+}
+
+/* Giảm padding trong body để chữ không bị dính mép */
+.card-body {
+  padding: 12px 16px !important;     /* khoảng cách text hợp lý */
+}
+
+/* Bo góc khớp hoàn toàn */
+.value-box-grid {
+  border-radius: inherit !important;
+  overflow: hidden; /* tránh leak màu trắng ở góc */
+}
+

@@ -1,0 +1,749 @@
+---
+title: "Game Analysis Dashboard"
+author: Le Duy Anh Ngo
+format: 
+    dashboard:
+        page-layout: navbar
+        logo: "/images/xbox.png"
+        nav-buttons:
+            - icon: "linkedin" 
+              href: "https://www.linkedin.com/in/duyanhngo03/"
+            - icon: "github"
+              href: "https://github.com/AnhNgo2803?tab=repositories"
+        theme: 
+            - custom.scss
+server: shiny
+---
+
+```{python}
+from shiny.express import render, ui, input # for shiny express
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import textwrap
+import matplotlib.patches as mpatches
+from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import MaxNLocator
+
+df = sns.load_dataset("penguins")
+xbox = pd.read_feather("xbox_cleaned_data.feather")
+fil_df = pd.read_feather("filter_df.feather")
+km_va = pd.read_feather("kmean_va.feather")
+
+# clean data a little bit
+xbox.loc[xbox['ADDED']=='Yesterday',"ADDED"] = '5 Feb 22'
+```
+
+```{python}
+# prepare for genre filtered table
+game_by_genre = xbox.loc[xbox['Main_Genre']=='Racing' ,['GAME','GAMERS']].sort_values(by='GAMERS',ascending= False)
+```
+
+```{python}
+#| label: define-a-function-for-plotting
+#| fig-width: 10
+#| fig-height: 4
+#| fig-dpi: 200
+# define a function for plotting cluster data
+def rank_plot(cluster):
+    clus_df = fil_df[fil_df['Cluster name']== cluster].copy()
+
+    # Prepare data for ploting
+
+    # top 5 (percent genre)
+    top5_per_genre = clus_df.nlargest(5, 'percent genre')
+    # top 5 (percent player)
+    top5_per_player = clus_df.nlargest(5,'percent player')
+    # combine two top filtered into a single df
+    combine_top5 = pd.concat([top5_per_genre,top5_per_player])
+    # remove duplicates row from two top5 tables
+    combine_top5 = combine_top5.drop_duplicates(subset= "Main_Genre").sort_values(by = "percent genre", ascending=False)
+
+    # plot bar plot
+
+    labels = combine_top5['Main_Genre'].head(5)
+    wrapped_labels = [textwrap.fill(label, width=10) for label in labels] # avoid overlapping title
+    percent_genre_vals = combine_top5['percent genre'].nlargest(5)
+    percent_player_vals = combine_top5['percent player'].nlargest(5)
+
+    # set up axis and plot
+    y = np.arange(len(labels))
+    height = 0.35
+
+    colors = ["#DD0303","#FA812F","#FAB12F","#dbc732ff","#d1d466ff"] # take color palette
+    blue_color =['#1B756E',"#1B756E","#1B756E","#1B756E","#1B756E"]
+    fig, ax = plt.subplots(figsize=(8,6), layout='constrained')
+    
+    for i, label in enumerate(labels):
+    # create bars on axis
+        bar1 = ax.barh(y[i] - height/2, percent_genre_vals.iloc[i], height, color =blue_color[i], alpha = 0.4)
+        bar2 = ax.barh(y[i] + height/2, percent_player_vals.iloc[i], height, color = blue_color[i], alpha=1.0)
+        # Add labels
+        ax.bar_label(bar1, padding=3, fmt='%.1f%%',fontsize=6)
+        ax.bar_label(bar2, padding=3, fmt='%.1f%%',fontsize=6)
+
+    # set custom legend
+    genre_patch = mpatches.Patch(color='#1B756E', alpha=0.4, label='Market (%)')
+    player_patch = mpatches.Patch(color='#1B756E', alpha=1.0, label='Demand (%)')
+    ax.legend(handles=[genre_patch, player_patch],fontsize=8)
+
+    # custom plot design
+    #ax.set_title(f'{cluster}',fontsize=16, fontweight='bold')
+    ax.set_xlabel('Proportion (%)',fontsize=7,fontweight='bold')
+    ax.tick_params(axis='x', labelsize=6)  # Adjust fontsize for x-axis tick labels
+    ax.set_yticks(y)
+    ax.set_yticklabels(wrapped_labels,rotation=70, ha='right',va='center',fontsize=6)#,fontweight='bold')
+    ax.invert_yaxis()
+    ax.grid(True,color="#D3D3D3")
+    ax.set_axisbelow(True)  
+    
+    #plt.subplots_adjust(right=0.2)
+    #fig.tight_layout() 
+    #plt.show() <- for analysis only
+    return fig
+```
+
+# Overview
+
+## toolbar {.toolbar}
+
+```{python}
+# game_by_genre = xbox.loc[xbox['Main_Genre']=='Racing' ,['GAME','GAMERS']].sort_values(by='GAMERS',ascending= False) -> Testing only
+genre_list = xbox['Main_Genre'].astype(str).unique().tolist()
+```
+
+```{python}
+ui.input_select("selected_genre", "Select genre", choices=genre_list)
+```
+
+```{python}
+#| label: set-up-for-value-box-data
+from shiny import reactive
+
+@reactive.calc
+def reactive_df():
+    """Hàm này sẽ lọc dataframe dựa trên genre được chọn và trả về 1 dataframe mới."""
+    react_df = xbox.loc[xbox['Main_Genre'] == input.selected_genre(),:]
+    return react_df
+```
+
+## Row 1 - Area 1 - Value boxes {height="45%"}
+
+### Column 1 {width="30%"}
+
+#### Row 1.1 - Value box 2 {height="50%"}
+
+```{python}
+#| label: number-of-action-game
+@render.ui
+def num_game_by_genre():
+    data = reactive_df()
+    if data.empty:
+        game_name = "No games found"
+        player_count = "N/A"
+    else:
+        # find number of row (games) in this dataframe
+        num_game = len(data)
+    
+    return ui.value_box(
+        title=f"{input.selected_genre()}",
+        value= ui.TagList(
+            ui.tags.div(num_game,style="font-size:25px; font-weight:bold"),
+            ui.tags.div('Total games in this genre',style="font-size:12px")
+        ),
+        showcase=ui.HTML("<i class='bi bi-clipboard-data'></i>"),
+        theme='info'
+    )
+```
+
+#### Row Box 2 {height="50%"}
+
+```{python}
+@render.ui
+def mean_player_genre():
+
+    data = reactive_df()
+
+    if data.empty:
+        game_name = "No games found"
+        player_count = "N/A"
+    else:
+        mean_player = round((data['GAMERS'].mean()),0)
+    
+    result_mean = f"{int(mean_player):,}" # ép kiểu về string
+
+    #f"Most played in genre"
+    return ui.value_box(
+        title="Average Players",
+        value=ui.TagList(
+            ui.tags.div(result_mean,style="font-size:25px; font-weight:bold;"),
+            ui.tags.div(f"per game in this genre",style="font-size:12px;")
+        ),
+        showcase=ui.HTML("<i class='bi bi-file-earmark-spreadsheet'></i>"),
+        theme="success"
+    )
+```
+
+### R1-C2 - Horizontal bar chart {width="40%"}
+
+```{python}
+#| title: "Most played games by genre"
+#| label: create-honrizontal-bar-plot
+@render.plot
+def h_bar():
+    # process data before visualization
+    gen_tab = xbox.loc[xbox['Main_Genre']==input.selected_genre() ,["GAME","GAMERS","TIME","RATING","second_genre"]].sort_values(by='GAMERS',ascending= False).head(5)
+    #gen_tab['GAME'] = gen_tab['GAME'].cat.remove_unused_categories() # remove unused category
+
+    # custom palette
+    custom_palette = ['#ff6361', '#bc5090', '#58508d', '#2394c9ff', '#ffa600']
+    gradient_palette = ['#1F7A43', '#257956', '#2B7869', '#2E7775', '#418382']
+
+    # Create figure and axis first
+    fig_gen_tab, ax_gen_tab = plt.subplots(figsize=(12,6), constrained_layout=True)
+    
+    sns.barplot(data = gen_tab, # Secondly create barplot using seaborn
+        x= 'GAMERS',
+        y='GAME',
+        orient="h",
+        palette=gradient_palette,
+        ax=ax_gen_tab,
+        order= gen_tab['GAME'],
+        width=0.6) # create plot
+
+    # set tick parameter for values indicated on x axis
+    ax_gen_tab.xaxis.set_major_locator(MaxNLocator(nbins=5,integer=True))
+    ax_gen_tab.tick_params(axis='x', length=10, labelsize= 8)
+    # set wrap text for title indicated on y axis
+    labels = [label.get_text() for label in ax_gen_tab.get_yticklabels()]
+    wrapped_labels = [textwrap.fill(label, width=20) for label in labels]
+    ax_gen_tab.set_yticklabels(wrapped_labels)
+    # set title of x/y label
+    ax_gen_tab.set_xlabel('Players',fontsize=8,fontweight='bold') # set x label
+    ax_gen_tab.set_ylabel('',fontsize=8, fontweight='bold') # y label
+    # indicate labels on bar
+    for container in ax_gen_tab.containers:
+        ax_gen_tab.bar_label(container, fmt='{:,.0f}', fontsize=8, padding=-35,color='white')
+
+    return fig_gen_tab
+```
+
+### R1-C3 - Donut chart {width="30%"}
+
+```{python}
+# processing date time (draft analysis)
+#xbox['ADDED'] = pd.to_datetime(xbox['ADDED'],format = "%d %b %y")
+#xbox['year'] = xbox['ADDED'].dt.year 
+#xbox['GAME'] = xbox['GAME'].astype(str)
+#xbox.groupby(['year','Main_Genre']).agg(game_count = ("GAME","count"))
+```
+
+```{python}
+# create a table of game proportion
+game_count = xbox.groupby('Main_Genre',observed=True).agg(game_counts = ("GAME","count")).reset_index() #group data
+total_game = game_count['game_counts'].sum() # calculate sum game
+game_count['game %'] = round((game_count['game_counts']/total_game)*100,2) # add % column
+game_count = game_count.sort_values(by='game %',ascending=False)
+```
+
+```{python}
+#| label: donut-chart
+#| title: "Game proportion on Xbox game pass"
+import plotly.express as px # import plotly
+import plotly.graph_objects as go
+from shinywidgets import render_plotly
+@render_plotly
+def create_donut_chart():
+
+    pull_values = [0.2 if genre == input.selected_genre() else 0 for genre in game_count['Main_Genre']] # set up pull value if choose that genre
+    chosen_text = [f"{key}: {val}" if pull > 0 else None\
+         for key, val, pull in zip(game_count['Main_Genre'],game_count['game %'],pull_values)]
+
+    # set up my own custom palette
+    donut_palette=[
+                    '#107C10','#1F7A43','#27795C','#2E7775','#418382','#528E8D',
+                    '#2E7775','#375E7E','#3C5283','#404587','#515692','#61659C',
+                    '#404587','#4E4086','#553D85','#5C3A84','#6B4C8F','#785C99',
+                    '#BE2C2C','#CC5E41','#D3774C','#DA8F56','#DD9965','#E0A273']
+
+    # create pie chart first
+    fig_pie = go.Figure(
+        data = [
+            go.Pie(
+                labels=game_count['Main_Genre'],
+                values=game_count['game %'],
+                hole=0.4,
+                pull=pull_values,
+                marker=dict(colors=donut_palette), # old: px.colors.qualitative.Plotly
+                text = chosen_text,
+                textinfo='text',
+                textposition='auto',
+                textfont=dict(size=14, color='black', weight='bold')
+            )
+        ]
+    )
+    # update layout
+    fig_pie.update_layout(
+        showlegend=False)
+
+    fig_pie.update_traces(hovertemplate='%{label}<br>%{value}%<extra></extra>')
+    return fig_pie
+```
+
+## Row 2 - R2 - Value boxes {height="45%"}
+
+### R2-C1 {width = "30%"}
+
+#### R2-C1-1 Row Box 3 {height="50%"}
+
+```{python}
+@render.ui
+def rating_mean():
+    data = reactive_df()
+
+    if data.empty:
+        game_name = "No games found"
+        player_count = "N/A"
+    else:
+        rate_mean = round((data['RATING'].mean()),2)
+
+    rate_mean_new = f"{rate_mean:,}"
+
+    return ui.value_box(
+        title="Average Rating",
+        value=ui.TagList(
+            ui.tags.div(rate_mean_new,style="font-size:25px; font-weight:bold;"),
+            ui.tags.div("mean score in this genre",style="font-size:12px;")
+        ),
+        theme="info",
+        showcase=ui.HTML("<i class='bi bi-star'></i>")
+    )
+```
+
+#### Row Box 4 {height="50%"}
+
+```{python}
+@render.ui
+def game_most_played():
+
+    data = reactive_df()
+
+    if data.empty:
+        game_name = "No games found"
+        player_count = "N/A"
+    else:
+        # Find most played game and its name
+        top_game = data.nlargest(1,'GAMERS').loc[:,["GAME","GAMERS"]]
+        game_name = top_game['GAME'].iloc[0] # take the data out of object type
+        player_count = top_game['GAMERS'].iloc[0] # take the data out of object type as a real value
+    
+    player_count = f"{int(top_game['GAMERS'].iloc[0]):,}" # ép kiểu về string
+
+    #f"Most played in genre"
+    return ui.value_box(
+        title=game_name,
+        value=ui.TagList(
+            ui.tags.div(player_count,style="font-size:25px; font-weight:bold;"),
+            ui.tags.div(f"Player count — top in genre",style="font-size:12px;")
+        ),
+        showcase=ui.HTML("<i class='bi bi-controller'></i>"),
+        theme="success"
+    )
+```
+
+### R2-C2 - Histogram {width="40%"}
+
+```{python}
+#| label: rating-histogram
+#| title: "Game rating frequency in genres"
+
+@render.plot
+def rate_hist():
+    xbox['highlight_genre'] = np.where(xbox['Main_Genre']==input.selected_genre(),input.selected_genre(),'Others')
+    custom_palette = {input.selected_genre(): '#2E7775', 'Others': 'lightgray'}
+
+    fig_h, ax_h = plt.subplots(figsize=(8,4))
+    sns.histplot(data = xbox,
+                            x='RATING',
+                            hue= 'highlight_genre',
+                            palette=custom_palette,
+                            ax = ax_h,
+                            multiple='stack')
+    ax_h.set_xlabel('Ratings',fontsize=10,fontweight='bold')
+    ax_h.set_ylabel('Frequency',fontsize=10,fontweight='bold')
+    return fig_h
+```
+
+### R2-C3 - Table {width="30%"}
+
+```{python}
+#| output: false
+genre_ana = xbox.groupby('Main_Genre', observed=True).agg(
+    gamer = pd.NamedAgg(column = "GAMERS", aggfunc= "mean"),
+    rating = pd.NamedAgg(column = "RATING", aggfunc= "mean"),
+    comp_ratio = pd.NamedAgg(column = "COMP %", aggfunc= "mean"),
+    play_time = pd.NamedAgg(column= "time_num", aggfunc = "mean")
+).round(2).sort_values(by='gamer', ascending=False).reset_index()
+```
+
+```{python}
+#| label: Table
+#| title: Games quantity by Genre
+@render.data_frame
+def genre_select():
+    gen_tab = xbox.loc[xbox['Main_Genre']==input.selected_genre() ,["GAME","GAMERS","TIME","RATING","second_genre"]].sort_values(by='GAMERS',ascending= False).head(5)
+    return gen_tab
+```
+
+# Analytics
+
+## Row 1 - Area 1 - Value boxes {height="50%"}
+
+### R1-C1 Value boxes Column 1 {width="30%"}
+
+#### Row 1.1 - Value box 2 {height="50%"}
+
+```{python}
+@render.ui
+def total_game_count():
+    data= reactive_df() # just take its data but not use in this value box
+
+    if data.empty:
+        print("There is no data available right now")
+    else:
+        # find number of row (games) in this dataframe
+        total_game = len(xbox)
+    
+    return ui.value_box(
+        title="Games Analyzed",
+        value= ui.TagList(
+            ui.tags.div(total_game,style="font-size:25px; font-weight:bold"),
+            ui.tags.div('across all genres',style="font-size:12px")
+        ),
+        showcase=ui.HTML("<i class='bi bi-bookmarks'></i>"),
+        theme='info'
+    )
+        
+```
+
+#### R1-C1-1 Box 2 {height="50%"}
+
+```{python}
+@render.ui
+def total_players():
+    data= reactive_df() # just take its data but not use in this value box
+
+    if data.empty:
+        print("There is no data available right now")
+    else:
+        # find number of row (games) in this dataframe
+        total_player = xbox['GAMERS'].mean()
+    # if 2nd times to process million number case
+    if total_player >= 1000000:
+        xbox_player = f"{int(total_player/1_000_000)}M"
+    else:
+        xbox_player = f"{int(total_player):,}"
+    
+    return ui.value_box(
+        title="Xbox Game Pass",
+        value= ui.TagList(
+            ui.tags.div(xbox_player,style="font-size:25px; font-weight:bold"),
+            ui.tags.div('active players',style="font-size:12px")
+        ),
+        showcase=ui.HTML("<i class='bi bi-people'></i>"),
+        theme='success'
+    )
+     
+```
+
+### R1-C2 - Bubble chart {width="40%"}
+
+```{python}
+#| label: Bubble-chart
+#| title: "The relationship between gamer and playing duration"
+#| caption: "use interactive tools to analyze data points"
+# create a bubble chart; plotly rendering is already loaded in donut chart
+@render_plotly
+def bubble_chart():
+    df = genre_ana.copy()
+    df['gamer'] = df['gamer'].astype('int')
+    labels = { # create label for later labeling
+        "Main_Genre": "Main Genre",
+        "gamer": "Gamers",
+        "play_time": "Play time",
+        "comp_ratio": "Achievement ratio"
+    }
+
+    fig = px.scatter(data_frame = df,
+                        y = "gamer",
+                        x = "play_time",
+                        size = "comp_ratio",
+                        color="comp_ratio",
+                        #hover_data=('Main_Genre', 'gamer','play_time'),      
+                        labels=labels, # rename corresponding labels indicated #345083","#297D6F<- old gradient
+                        color_continuous_scale=["#107C10","#2E7775"],
+                        size_max=40,
+                        custom_data=["Main_Genre","gamer","play_time","comp_ratio"])
+    # in this case we want to use custom hover info, so we don't use hover_data arg, instead use custom_data() to arrage data as expected order and then set up hover template later.
+
+    fig.update_traces(
+        hovertemplate=(
+            "<b>%{customdata[0]}</b><br>"
+            "Gamers: %{customdata[1]:,}<br>"
+            "Play time: %{customdata[2]:.1f} hrs<br>"
+            "Achievement ratio: %{customdata[3]:.1f}<extra></extra>"
+        )
+    ) 
+    # hover template used html, by utilizing custome_data arg, we can extract its value in hovertemplate setting.
+
+    # Update layout
+    fig.update_layout(
+        title='Use interactive tools to analyze data points',
+        xaxis_title='Play duration',
+        yaxis_title='Gamer',
+        xaxis=dict(autorange=True),  # auto adjust range to fit data
+        yaxis=dict(autorange=True),  # auto adjust range to fit data
+        showlegend=True,
+        legend_title_text="Achv.<br>ratio",
+        coloraxis_colorbar = dict(title="Achv.<br>ratio")
+    )
+    
+    # Add annotations for genre labels
+    #for i, row in genre_ana.iterrows():
+        #fig.add_annotation(
+            #x=row['play_time'],
+            #y=row['gamer'],
+            #text=row['Main_Genre'],
+            #showarrow=False,
+            #font=dict(size=6, color="black"))
+    #plt.grid(True)
+    #fig.tight_layout()
+    return fig
+```
+
+### R1-C3 - Ranking chart {width="30%"}
+
+```{python}
+#| label: ranking-chart
+#| title: "Top 5 Game Genre Rankings by Average Player Count"
+rank_df = xbox.groupby('Main_Genre',observed=True).agg(gamers=('GAMERS','mean')).reset_index().sort_values(by='gamers',ascending=False).head(5)
+
+rank_df['Main_Genre'] = rank_df['Main_Genre'].cat.remove_unused_categories()
+
+# custom palette
+custom_palette = ['#ff6361', '#bc5090', '#58508d', '#2394c9ff', '#ffa600']
+gradient_palette = ['#1F7A43', '#257956', '#2B7869', '#2E7775', '#418382']
+
+@render.plot
+def top_game_rank():
+    fig_rp, ax_rp = plt.subplots(figsize=(5,8),layout='constrained')
+
+
+    sns.barplot(data = rank_df,
+                x='gamers',
+                y='Main_Genre',
+                orient='h',
+                ax=ax_rp,
+                order = rank_df['Main_Genre'],
+                width=0.6,
+                palette= gradient_palette)
+    ax_rp.set_xlabel('Average gamer',fontsize=8,fontweight='bold')
+    ax_rp.set_ylabel('Main genre',fontsize=8,fontweight='bold')
+
+    # indicate label in bars
+    for container in ax_rp.containers:
+        ax_rp.bar_label(container, fmt='{:,.0f}', fontsize=8, padding=-35,color='white')
+
+    return fig_rp
+```
+
+## Row 2 - R2 - Value boxes {height="50%"}
+
+### R2-C1 {width = "30%"}
+
+#### R2-C1-1 Row Box 3 {height="50%"}
+
+```{python}
+@render.ui
+def sandbox_count_avg():
+    data= reactive_df() # just take its data but not use in this value box
+
+    if data.empty:
+        print("There is no data available right now")
+    else:
+        # find number of row (games) in this dataframe
+        sandbox_gamers = rank_df.loc[rank_df['Main_Genre']=='Sandbox',"gamers"].iloc[0] # extract value out of df format
+
+        avg_sandbox = f"{int(sandbox_gamers):,}"
+    
+    return ui.value_box(
+        title="Sandbox",
+        value= ui.TagList(
+            ui.tags.div(avg_sandbox,style="font-size:25px; font-weight:bold"),
+            ui.tags.div('players (Top game)',style="font-size:12px")
+        ),
+        showcase=ui.HTML("<i class='bi bi-box'></i>"),
+        theme='info'
+    )
+       
+```
+
+#### R2-C1-2 Row Box 4 {height="50%"}
+
+```{python}
+@render.ui
+def chance_gap():
+    data= reactive_df() # just take its data but not use in this value box
+
+    if data.empty:
+        print("There is no data available right now")
+    else:
+        gap = "~16%"
+    
+    return ui.value_box(
+        title="Action - potential opportunity",
+        value= ui.TagList(
+            ui.tags.div(gap,style="font-size:25px; font-weight:bold"),
+            ui.tags.div('Player Demand Gap in Epic/Mainstream',style="font-size:12px")
+        ),
+        showcase=ui.HTML("<i class='bi bi-graph-up-arrow'></i>"),
+        theme='success'
+    )    
+```
+
+### R2-C2 - Horizontal bar chart {width="40%"}
+
+```{python}
+#| content: card-toolbar
+#| label: select-input-2
+ui.input_selectize(
+    "z1",
+    label = "Cluster",
+    choices= ['Casual (easy-short)', 'Challenge (very hard-short)',
+       'Epic (hard-very long)', 'Mainstream (hard-long)'])
+```
+
+```{python}
+#| title: Proportion of Games vs. Player Demand 
+#| label: cluster-plot-2
+@render.plot
+def plot_rend2():
+    clus_plot = rank_plot(input.z1())
+    return clus_plot
+```
+
+### R2-C3 - Scatter plot {width="30%"}
+
+```{python}
+#| label: scatter-plot-2
+#| title: Ratio and play time relationship clustered by labels
+@render.plot
+def sca_plot():
+
+    cluster_name = { # assign name for each group
+    0: 'Casual (easy-short)',
+    1: 'Epic (hard-very long)',
+    2: 'Challenge (very hard-short)',
+    3: 'Mainstream (hard-long)'
+    }
+    # mapping name into corresponding cluster
+    km_va['Cluster name'] = km_va['cluster'].map(cluster_name)
+
+    xbox_palette=['#0e6e0eff','#0c635eff','#239823','#418d88ff']
+
+# visualize scatter plot using logarit, and coloring data point by cluster label
+    fig2, ax2 = plt.subplots(figsize=(10,7), constrained_layout=True)
+    sns.scatterplot(data = km_va,
+                    y= 'RATIO',
+                    x= 'time_num',
+                    hue='Cluster name',
+                    palette=xbox_palette, s=40)
+    ax2.set_xscale("log")
+    ax2.set_yscale("log")
+    # Apply ScalarFormatter() for x and y axis
+    ax2.xaxis.set_major_formatter(ScalarFormatter())
+    ax2.yaxis.set_major_formatter(ScalarFormatter())
+    ax2.set_xlabel("Playtime (h)",fontsize=8, fontweight="bold")
+    ax2.set_ylabel("Difficulty",fontsize=8,fontweight="bold")
+    ax2.legend(fontsize=5)
+    #ax2.set_title("Ratio and play time relationship clustered by labels")
+    return fig2
+```
+
+# Insight
+
+## Row 1 {height="30%"}
+
+### R1-C1 {width="70%"}
+
+:::{.card title="Project Context & Methodology"}
+
+**Objective:** To analyze 455 titles on Xbox Game Pass to uncover key drivers of player engagement and provide data-driven recommendations for strategic portfolio management.
+
+**Tech & Techniques:** This analysis was conducted in Python, utilizing libraries like Pandas for data manipulation and Scikit-learn for machine learning. The core insight comes from a K-Means Clustering model which segments games into distinct experience clusters based on their difficulty and average playtime. The findings are presented in this interactive Quarto dashboard.
+:::
+
+### R1-C2 {width="30%"}
+
+:::{.card title="Learn more about my project"}
+Check out **my report version** to know full process I did for this dashboard!
+
+[Xbox Game Pass Analysis Report]("https://leduyanhngo-xbox-game-analysis-report.share.connect.posit.cloud")
+
+[My project summary on LinkedIn]("")
+
+
+:::
+
+## Row 2 {height="70%"}
+
+:::{.card title="Insights & Strategic Recommendations"}
+
+
+This summary synthesizes key findings from the analysis to provide strategic viewpoints for game developers and product managers, which is essential for future game acquisition and development of Xbox game pass product.
+
+**1. Two Distinct Paths to Player Engagement Success**
+
+Our analysis reveals that a game's popularity is not driven by its completion rate, but rather by aligning with one of two primary success models (**read the Bubble chart in Analytics tab**):
+
+- **The Mass-Appeal Model**: Led by Sandbox titles, this model attracts a massive player base through short average playtimes. Its success hinges on offering freedom, creativity, and accessible gameplay that appeals to a broad audience looking for quick entertainment.
+
+- **The High-Engagement Model**: Championed by MMO and Compilation games, this model captivates a dedicated player base for extended periods. Success here is built on deep immersion, rich narratives, and strong community features that encourage long-term investment from players.
+
+    **=> Key Takeaway:** Success is not genre-specific but experience-driven. The critical choice is whether to cater to players seeking immediate, creative fun or those desiring deep, long-lasting worlds.
+
+**2. Golden Opportunity: Capitalizing on Untapped Market Gaps**
+
+A comparative analysis of **Player Demand** versus **Game Supply** across different experience clusters has identified significant, underserved market segments (**read Proportion of Games vs. Player Demand in Analytics tab**):
+
+**a. "Action is King" - A Major Unmet Demand:**
+
+- Within the "**Epic (Hard - Very Long)**" and "**Mainstream (Hard - Long)**" clusters, the Action genre commands nearly 50% of player demand but only constitutes ~33-35% of the available games. This represents the single largest growth opportunity.
+
+**b. Untapped Potential in the Casual Market:**
+
+- In the "**Casual (Easy - Short)**" cluster, both Action and Adventure games show a significantly higher player demand compared to their current supply on the platform.
+
+**Actionable Recommendations:**
+
+- **Top Priority:** Aggressively increase investment in developing and acquiring high-quality Action titles for the Epic and Mainstream segments to meet overwhelming player demand.
+
+- **Expand Reach:** Diversify the portfolio by adding more accessible, short-play Adventure and Action games to attract and retain the casual player base.
+
+**3. Resource Optimization: Reallocating for Maximum Impact**
+
+The data also indicates areas of market saturation where development resources may be inefficiently allocated, as supply currently exceeds player demand.
+
+**a. Signs of Saturation:**
+
+- In the **Epic** cluster, the MMO and Simulation genres are over-supplied relative to their active player bases.
+
+- Similarly, in the **Mainstream** cluster, Sports and Strategy games are more numerous than player interest currently justifies.
+
+**b. Optimization Recommendations:**
+
+- **Re-evaluate Investment:** Carefully reconsider new investments in the MMO and Simulation genres for the **Epic** cluster. These resources could be strategically reallocated to the high-demand Action genre for a greater return.
+
+- **Portfolio Review:** Conduct a thorough performance analysis of the existing Sports and Strategy titles in the **Mainstream** category to ensure any new additions offer unique value and are not redundant.
+:::
