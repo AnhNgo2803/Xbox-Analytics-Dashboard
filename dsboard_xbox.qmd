@@ -26,7 +26,6 @@ import matplotlib.patches as mpatches
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.ticker import MaxNLocator
 
-df = sns.load_dataset("penguins")
 xbox = pd.read_feather("xbox_cleaned_data.feather")
 fil_df = pd.read_feather("filter_df.feather")
 km_va = pd.read_feather("kmean_va.feather")
