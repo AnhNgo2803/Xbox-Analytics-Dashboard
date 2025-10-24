@@ -694,8 +694,7 @@ def sca_plot():
 
 ### R1-C1 {width="70%"}
 
-:::{.card title="Project Context & Methodology"}
-
+::: {.card title="Project Context & Methodology"}
 **Objective:** To analyze 455 titles on Xbox Game Pass to uncover key drivers of player engagement and provide data-driven recommendations for strategic portfolio management.
 
 **Tech & Techniques:** This analysis was conducted in Python, utilizing libraries like Pandas for data manipulation and Scikit-learn for machine learning. The core insight comes from a K-Means Clustering model which segments games into distinct experience clusters based on their difficulty and average playtime. The findings are presented in this interactive Quarto dashboard.
@@ -703,32 +702,28 @@ def sca_plot():
 
 ### R1-C2 {width="30%"}
 
-:::{.card title="Learn more about my project"}
+::: {.card title="Learn more about my project"}
 Check out **my report version** to know full process I did for this dashboard!
 
-[Xbox Game Pass Analysis Report]("https://leduyanhngo-xbox-game-analysis-report.share.connect.posit.cloud")
+[Xbox Game Pass Analysis Report](https://leduyanhngo-xbox-game-analysis-report.share.connect.posit.cloud)
 
-[My project summary on LinkedIn]("https://lnkd.in/gHkXaCYa")
-
-
+[My project summary on LinkedIn](https://www.linkedin.com/in/duyanhngo03/details/projects/?profileUrn=urn%3Ali%3Afsd_profile%3AACoAAEPiiK8BJoFIdOLPSlFkTRoHso99100cg-c)
 :::
 
 ## Row 2 {height="70%"}
 
-:::{.card title="Insights & Strategic Recommendations"}
-
-
+::: {.card title="Insights & Strategic Recommendations"}
 This summary synthesizes key findings from the analysis to provide strategic viewpoints for game developers and product managers, which is essential for future game acquisition and development of Xbox game pass product.
 
 **1. Two Distinct Paths to Player Engagement Success**
 
 Our analysis reveals that a game's popularity is not driven by its completion rate, but rather by aligning with one of two primary success models (**read the Bubble chart in Analytics tab**):
 
-- **The Mass-Appeal Model**: Led by Sandbox titles, this model attracts a massive player base through short average playtimes. Its success hinges on offering freedom, creativity, and accessible gameplay that appeals to a broad audience looking for quick entertainment.
+-   **The Mass-Appeal Model**: Led by Sandbox titles, this model attracts a massive player base through short average playtimes. Its success hinges on offering freedom, creativity, and accessible gameplay that appeals to a broad audience looking for quick entertainment.
 
-- **The High-Engagement Model**: Championed by MMO and Compilation games, this model captivates a dedicated player base for extended periods. Success here is built on deep immersion, rich narratives, and strong community features that encourage long-term investment from players.
+-   **The High-Engagement Model**: Championed by MMO and Compilation games, this model captivates a dedicated player base for extended periods. Success here is built on deep immersion, rich narratives, and strong community features that encourage long-term investment from players.
 
-    **=> Key Takeaway:** Success is not genre-specific but experience-driven. The critical choice is whether to cater to players seeking immediate, creative fun or those desiring deep, long-lasting worlds.
+    **=\> Key Takeaway:** Success is not genre-specific but experience-driven. The critical choice is whether to cater to players seeking immediate, creative fun or those desiring deep, long-lasting worlds.
 
 **2. Golden Opportunity: Capitalizing on Untapped Market Gaps**
 
@@ -736,17 +731,17 @@ A comparative analysis of **Player Demand** versus **Game Supply** across differ
 
 **a. "Action is King" - A Major Unmet Demand:**
 
-- Within the "**Epic (Hard - Very Long)**" and "**Mainstream (Hard - Long)**" clusters, the Action genre commands nearly 50% of player demand but only constitutes ~33-35% of the available games. This represents the single largest growth opportunity.
+-   Within the "**Epic (Hard - Very Long)**" and "**Mainstream (Hard - Long)**" clusters, the Action genre commands nearly 50% of player demand but only constitutes \~33-35% of the available games. This represents the single largest growth opportunity.
 
 **b. Untapped Potential in the Casual Market:**
 
-- In the "**Casual (Easy - Short)**" cluster, both Action and Adventure games show a significantly higher player demand compared to their current supply on the platform.
+-   In the "**Casual (Easy - Short)**" cluster, both Action and Adventure games show a significantly higher player demand compared to their current supply on the platform.
 
 **Actionable Recommendations:**
 
-- **Top Priority:** Aggressively increase investment in developing and acquiring high-quality Action titles for the Epic and Mainstream segments to meet overwhelming player demand.
+-   **Top Priority:** Aggressively increase investment in developing and acquiring high-quality Action titles for the Epic and Mainstream segments to meet overwhelming player demand.
 
-- **Expand Reach:** Diversify the portfolio by adding more accessible, short-play Adventure and Action games to attract and retain the casual player base.
+-   **Expand Reach:** Diversify the portfolio by adding more accessible, short-play Adventure and Action games to attract and retain the casual player base.
 
 **3. Resource Optimization: Reallocating for Maximum Impact**
 
@@ -754,13 +749,13 @@ The data also indicates areas of market saturation where development resources m
 
 **a. Signs of Saturation:**
 
-- In the **Epic** cluster, the MMO and Simulation genres are over-supplied relative to their active player bases.
+-   In the **Epic** cluster, the MMO and Simulation genres are over-supplied relative to their active player bases.
 
-- Similarly, in the **Mainstream** cluster, Sports and Strategy games are more numerous than player interest currently justifies.
+-   Similarly, in the **Mainstream** cluster, Sports and Strategy games are more numerous than player interest currently justifies.
 
 **b. Optimization Recommendations:**
 
-- **Re-evaluate Investment:** Carefully reconsider new investments in the MMO and Simulation genres for the **Epic** cluster. These resources could be strategically reallocated to the high-demand Action genre for a greater return.
+-   **Re-evaluate Investment:** Carefully reconsider new investments in the MMO and Simulation genres for the **Epic** cluster. These resources could be strategically reallocated to the high-demand Action genre for a greater return.
 
-- **Portfolio Review:** Conduct a thorough performance analysis of the existing Sports and Strategy titles in the **Mainstream** category to ensure any new additions offer unique value and are not redundant.
+-   **Portfolio Review:** Conduct a thorough performance analysis of the existing Sports and Strategy titles in the **Mainstream** category to ensure any new additions offer unique value and are not redundant.
 :::
